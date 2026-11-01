@@ -1,0 +1,83 @@
+import os
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+
+# ১. যেকোনো .jpg বা .png ছবির নাম এখানে দিন
+image_path = 'download (2).jpg'  # আপনার ফোল্ডারের ছবির নাম অনুযায়ী পরিবর্তন করতে পারেন
+
+# ইমেজ রিড করা
+img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+
+# যদি কোনো ছবিই না থাকে, তবে অটোমেটিক কাল্পনিক চালের ইমেজ তৈরি করবে
+if img is None:
+    print("Warning: ছবি পাওয়া যায়নি! একটি ডামি চালের টেস্ট ইমেজ দিয়ে রান করা হচ্ছে।")
+    img = np.zeros((300, 300), dtype=np.uint8)
+    cv2.ellipse(img, (70, 80), (25, 8), 30, 0, 360, 200, -1)
+    cv2.ellipse(img, (180, 60), (30, 10), -20, 0, 360, 220, -1)
+    cv2.ellipse(img, (120, 180), (28, 9), 45, 0, 360, 210, -1)
+    cv2.ellipse(img, (220, 200), (22, 7), 80, 0, 360, 230, -1)
+
+# ২. Thresholding (ব্যাকগ্রাউন্ড থেকে চাল আলাদা করা)
+_, thresh = cv2.threshold(img, 100, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+# ৩. Contour Detection (চালের বর্ডার আলাদা করা ও কাউন্ট)
+contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+output_img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+
+print("=" * 60)
+print(f" মোট শনাক্তকৃত চালের সংখ্যা (Total Rice Count): {len(contours)}")
+print("=" * 60)
+
+# ৪. Feature Extraction (Area, Perimeter, Major Axis Length)
+min_area = 50   # সর্বনিম্ন পিক্সেল সাইজ
+max_area = 3000 # সর্বোচ্চ পিক্সেল সাইজ
+
+filtered_rice_count = 0
+
+for i, cnt in enumerate(contours):
+    area = cv2.contourArea(cnt)
+    perimeter = cv2.arcLength(cnt, True)
+    
+    if len(cnt) >= 5:
+        (x, y), (MA, ma), angle = cv2.fitEllipse(cnt)
+        major_axis_length = max(MA, ma)
+    else:
+        major_axis_length = 0
+
+    if min_area <= area <= max_area:
+        filtered_rice_count += 1
+        # ফিল্টার করা চালের চারপাশে সবুজ বর্ডার আঁকা
+        cv2.drawContours(output_img, [cnt], -1, (0, 255, 0), 2)
+        
+        M = cv2.moments(cnt)
+        if M["m00"] != 0:
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+            cv2.putText(output_img, f"#{filtered_rice_count}", (cX - 5, cY),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
+
+    print(f"Rice Grain #{i+1}:")
+    print(f"  - Area (ক্ষেত্রফল): {area:.2f} sq pixels")
+    print(f"  - Perimeter (পরিসীমা): {perimeter:.2f} pixels")
+    print(f"  - Major Axis Length: {major_axis_length:.2f} pixels")
+    print("-" * 40)
+
+# ৫. আউটপুট প্রসেসড ছবি প্লট করা
+plt.figure(figsize=(12, 6))
+
+plt.subplot(1, 3, 1)
+plt.imshow(img, cmap='gray')
+plt.title('1. Original Rice Image')
+
+plt.subplot(1, 3, 2)
+plt.imshow(thresh, cmap='gray')
+plt.title('2. Thresholding')
+
+plt.subplot(1, 3, 3)
+plt.imshow(cv2.cvtColor(output_img, cv2.COLOR_BGR2RGB))
+plt.title('3. Counted & Measured Rice')
+
+plt.tight_layout()
+plt.show()

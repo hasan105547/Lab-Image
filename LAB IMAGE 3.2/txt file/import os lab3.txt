@@ -1,0 +1,58 @@
+import os
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+
+# ১. ইমেজের পাথ (Lab 1 এর সেই ছবিটিই ব্যবহার করা হচ্ছে)
+image_path = r'C:\Users\LENOVO\Downloads\download (1).jpg'
+
+# ইমেজ রিড করা (ফাইল না থাকলে টেস্ট ইমেজ তৈরি করবে)
+img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+
+if img is None:
+    print("Warning: ছবি পাওয়া যায়নি! একটি ডামি টেস্ট ইমেজ দিয়ে রান করা হচ্ছে।")
+    img = np.zeros((300, 300), dtype=np.uint8)
+    cv2.rectangle(img, (50, 50), (250, 250), 255, -1)
+    cv2.circle(img, (150, 150), 60, 100, -1)
+
+# ২. ৩x৩ মাস্ক (3x3 Masks/Kernels) তৈরি করা
+
+# ক) Blurring Kernel (Averaging Mask)
+kernel_blur = np.ones((3, 3), np.float32) / 9.0
+
+# খ) Sharpening Kernel
+kernel_sharpen = np.array([[0, -1, 0],
+                           [-1, 5, -1],
+                           [0, -1, 0]], dtype=np.float32)
+
+# গ) Edge Detection Kernel (Laplacian)
+kernel_edge = np.array([[-1, -1, -1],
+                        [-1,  8, -1],
+                        [-1, -1, -1]], dtype=np.float32)
+
+# ৩. Convolution প্রক্রিয়া সম্পাদন করা (cv2.filter2D ব্যবহার করে)
+img_blur = cv2.filter2D(img, -1, kernel_blur)
+img_sharpen = cv2.filter2D(img, -1, kernel_sharpen)
+img_edge = cv2.filter2D(img, -1, kernel_edge)
+
+# ৪. ফলাফল সাজিয়ে প্লট করে দেখানো
+plt.figure(figsize=(12, 10))
+
+plt.subplot(2, 2, 1)
+plt.imshow(img, cmap='gray')
+plt.title('1. Original Image')
+
+plt.subplot(2, 2, 2)
+plt.imshow(img_blur, cmap='gray')
+plt.title('2. Blurred Image (3x3 Averaging)')
+
+plt.subplot(2, 2, 3)
+plt.imshow(img_sharpen, cmap='gray')
+plt.title('3. Sharpened Image (3x3 Sharpen)')
+
+plt.subplot(2, 2, 4)
+plt.imshow(img_edge, cmap='gray')
+plt.title('4. Edge Detected Image (3x3 Edge)')
+
+plt.tight_layout(pad=2.0)
+plt.show()

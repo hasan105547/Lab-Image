@@ -1,0 +1,54 @@
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+
+# ১. ইমেজের পাথ
+image_path = 'LabNum7.jpg'
+
+# ইমেজ রিড করা
+img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+
+# ২. Sobel Edge Detection
+sobelx = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)
+sobely = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3)
+sobel_combined = cv2.magnitude(sobelx, sobely)
+
+# ৩. Prewitt Edge Detection
+kernelx = np.array([[1, 0, -1], [1, 0, -1], [1, 0, -1]], dtype=np.float32)
+kernely = np.array([[1, 1, 1], [0, 0, 0], [-1, -1, -1]], dtype=np.float32)
+prewittx = cv2.filter2D(img, -1, kernelx)
+prewitty = cv2.filter2D(img, -1, kernely)
+prewitt_combined = cv2.addWeighted(prewittx, 0.5, prewitty, 0.5, 0)
+
+# ৪. Laplacian Edge Detection
+laplacian = cv2.Laplacian(img, cv2.CV_64F)
+laplacian_abs = cv2.convertScaleAbs(laplacian)
+
+# ৫. Canny Edge Detection
+canny = cv2.Canny(img, 100, 200)
+
+# ৬. ফলাফল প্লট করা
+plt.figure(figsize=(12, 8))
+
+plt.subplot(2, 3, 1)
+plt.imshow(img, cmap='gray')
+plt.title('1. Original Image')
+
+plt.subplot(2, 3, 2)
+plt.imshow(sobel_combined, cmap='gray')
+plt.title('2. Sobel Operator')
+
+plt.subplot(2, 3, 3)
+plt.imshow(prewitt_combined, cmap='gray')
+plt.title('3. Prewitt Operator')
+
+plt.subplot(2, 3, 4)
+plt.imshow(laplacian_abs, cmap='gray')
+plt.title('4. Laplacian Operator')
+
+plt.subplot(2, 3, 5)
+plt.imshow(canny, cmap='gray')
+plt.title('5. Canny Edge Detector')
+
+plt.tight_layout(pad=2.0)
+plt.show()

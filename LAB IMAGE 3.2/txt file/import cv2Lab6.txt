@@ -1,0 +1,50 @@
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+
+# ১. ইমেজ লোড করা
+image_path = r'C:\Users\LENOVO\Downloads\download (1).jpg'
+img = cv2.imread(image_path)
+img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+# ২. Grayscale এ রূপান্তর
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+# ৩. Binary Inverted Thresholding (Otsu Algorithm)
+_, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+# ৪. Morphological Operations & Distance Transform (আসল সেগমেন্টেশন লজিক)
+kernel = np.ones((3, 3), np.uint8)
+
+# Morphological Closing: অবজেক্টের ভেতরের নয়েজ বা ছিদ্র পূরণ করা
+closing = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=15)
+
+# Distance Transform: পিক্সেল থেকে ব্যাকগ্রাউন্ডের দূরত্ব মেপে মূল অবজেক্ট (Foreground) বের করা
+dist_transform = cv2.distanceTransform(closing, cv2.DIST_L2, 0)
+_, fg = cv2.threshold(dist_transform, 0.02 * dist_transform.max(), 255, 0)
+
+# ৫. সব আউটপুট একত্রে subplot আকারে দেখা
+plt.figure(figsize=(10, 10))
+
+plt.subplot(2, 2, 1)
+plt.imshow(img_rgb)
+plt.axis('off')
+plt.title('1. Original Image')
+
+plt.subplot(2, 2, 2)
+plt.imshow(gray, cmap='gray')
+plt.axis('off')
+plt.title('2. GrayScale Image')
+
+plt.subplot(2, 2, 3)
+plt.imshow(thresh, cmap='gray')
+plt.axis('off')
+plt.title('3. Threshold Image')
+
+plt.subplot(2, 2, 4)
+plt.imshow(fg, cmap='gray')
+plt.axis('off')
+plt.title('4. Final Segmented Image')
+
+plt.tight_layout(pad=2.0)
+plt.show()
